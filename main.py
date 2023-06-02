@@ -23,6 +23,8 @@ bombs = []
 game_over = False
 restart_button_rect = pygame.Rect(SW // 2 - 50, SH // 2 + 50, 100, 50)
 
+clock = pygame.time.Clock()
+FPS = 300
 
 def restart_game():
     global player, fishes, bombs, game_over
@@ -31,11 +33,11 @@ def restart_game():
     bombs = []
     game_over = False
 
-
 def game_loop():
     global game_over
 
     while not game_over:
+        clock.tick(FPS)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -52,10 +54,13 @@ def game_loop():
                 and not fish.is_caught
             ):
                 if player.line_rect.collidepoint(fish.rect.center):
-                    if random.random() < 0.5 + int(player.upgrades[0]["applied"]) * 0.5:
+                    catch_probability = random.random() 
+                    threshold = 0.5 + int(player.upgrades[0]["applied"]) * 0.5  
+                    if catch_probability < threshold:
                         fish.is_caught = True
                         fish.speed = 0.0
                         player.caught_fish.append(fish)
+
             elif fish.is_caught and not player.is_casting_line:
                 fish.is_caught = False
                 fish.speed = random.uniform(0.2, 1)
@@ -69,7 +74,11 @@ def game_loop():
             bomb.update()
             bomb.draw(screen)
 
-            if player.is_casting_line and bomb.rect.colliderect(player.line_rect):
+            if (
+                player.is_casting_line
+                and bomb.rect.colliderect(player.line_rect)
+                and bomb.x < player.line_start_pos[0]
+            ):
                 game_over = True
                 break
 
@@ -82,6 +91,8 @@ def game_loop():
         if len(bombs) < 2 and random.random() < 0.0003:
             bombs.append(Bomb())
 
+        player.line_rect = pygame.Rect(player.line_start_pos[0], 0, player.line_width, SH)  # Update line rectangle
+
         player.draw_line(screen)
         player.draw_score(screen)
         player.draw_upgrades(screen)
@@ -89,8 +100,6 @@ def game_loop():
 
     game_over_font = pygame.font.Font(None, 50)
     score_font = pygame.font.Font(None, 30)
-
-    player.line_start_pos[0]
 
     while True:
         for event in pygame.event.get():
@@ -119,7 +128,6 @@ def game_loop():
 
         pygame.display.flip()
 
-
 start_font = pygame.font.Font(None, 50)
 score_font = pygame.font.Font(None, 24)
 text_font = pygame.font.Font(None, 24)
@@ -137,7 +145,7 @@ while True:
     screen.blit(sea_background, (0, 0))
     start_text = start_font.render("Fishing Frenzy", True, (236, 248, 249))
     start_rect = start_text.get_rect(center=(SW // 2, SH // 2))
-    text_surface = text_font.render("v.2.5 (BUGS MAY OCCUR)", True, (236, 248, 249))
+    text_surface = text_font.render("v.3.1.2 STABLE (BUGS MAY OCCUR)", True, (236, 248, 249))
     start_button_text = score_font.render("Start", True, (0, 0, 0))
     start_button_rect = start_button_text.get_rect(center=(SW // 2, SH // 2 + 75))
 

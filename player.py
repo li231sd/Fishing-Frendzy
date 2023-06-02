@@ -1,43 +1,40 @@
 import pygame
-import random
 import time
 
 SW = 600
 SH = 400
 
+UPGRADE_BG_COLOR = (100, 149, 237)
+UPGRADE_TEXT_COLOR = (255, 255, 255)
 
 class Player:
     def __init__(self):
         self.is_casting_line = False
-        self.line_start_pos = (0, 0)
         self.line_end_pos = (0, 0)
+        self.line_start_pos = (0, 0)  # Updated line start position
         self.line_rect = pygame.Rect(0, 0, 0, 0)
         self.caught_fish = []
         self.score = 0
         self.upgrades = [
-            {"name": "Double luck!", "price": 10, "applied": False, "display_time": 0},
-            {"name": "Double score!", "price": 20, "applied": False, "display_time": 0},
-            {"name": "More fish!", "price": 30, "applied": False, "display_time": 0}
+            {"name": "Double luck!", "price": 100, "applied": False, "display_time": 0},
+            {"name": "Double score!", "price": 200, "applied": False, "display_time": 0},
+            {"name": "More fish!", "price": 300, "applied": False, "display_time": 0}
         ]
         self.current_upgrade = 0
+        self.line_color = (0, 0, 0)  # Color of the fishing line
+        self.line_width = 2  # Width of the fishing line
 
     def handle_event(self, event):
         if event.type == pygame.MOUSEBUTTONDOWN:
             self.is_casting_line = True
-            self.line_start_pos = (pygame.mouse.get_pos()[0], 0)
+            self.line_start_pos = (pygame.mouse.get_pos()[0], 0)  # Update line start position to top of the screen
         elif event.type == pygame.MOUSEBUTTONUP:
             self.is_casting_line = False
-            self.line_rect = pygame.Rect(
-                self.line_start_pos[0],
-                0,
-                self.line_end_pos[0] - self.line_start_pos[0],
-                SH,
-            )
             if not self.is_casting_line:
+                line_movement = self.line_end_pos[1] - 0  # Calculate vertical line movement
                 for fish in self.caught_fish:
-                    fish.x += self.line_end_pos[0] - self.line_start_pos[0]
-                    fish.rect.x = fish.x - 10
-                    self.score += 1
+                    fish.rect.move_ip(0, line_movement)  # Adjust fish position
+                self.score += len(self.caught_fish)
                 self.caught_fish.clear()
                 self.check_upgrade_unlock()
                 if self.current_upgrade == len(self.upgrades):
@@ -49,7 +46,7 @@ class Player:
     def draw_line(self, surface):
         if self.is_casting_line:
             pygame.draw.line(
-                surface, (0, 0, 0), self.line_start_pos, self.line_end_pos, 2
+                surface, self.line_color, self.line_start_pos, self.line_end_pos, self.line_width  # Updated line drawing parameters
             )
 
     def draw_score(self, surface):
@@ -59,23 +56,24 @@ class Player:
 
     def draw_upgrades(self, surface):
         upgrade_font = pygame.font.Font(None, 24)
-        upgrade_bg_color = (100, 149, 237)
-        upgrade_text_color = (255, 255, 255)
         upgrade_margin = 10
         upgrade_width = (SW - 2 * upgrade_margin) // 3
         upgrade_height = 30
 
+        total_width = len(self.upgrades) * (upgrade_width + upgrade_margin) - upgrade_margin
+        start_x = (SW - total_width) // 2
+
         for i, upgrade in enumerate(self.upgrades):
             upgrade_rect = pygame.Rect(
-                upgrade_margin + i * (upgrade_width + upgrade_margin),
+                start_x + i * (upgrade_width + upgrade_margin),
                 SH - upgrade_height - upgrade_margin,
                 upgrade_width,
                 upgrade_height,
             )
-            pygame.draw.rect(surface, upgrade_bg_color, upgrade_rect, border_radius=5)
+            pygame.draw.rect(surface, UPGRADE_BG_COLOR, upgrade_rect, border_radius=5)
 
             text = upgrade_font.render(
-                f"{upgrade['name']} (${upgrade['price']})", True, upgrade_text_color
+                f"{upgrade['name']} (${upgrade['price']})", True, UPGRADE_TEXT_COLOR
             )
             text_rect = text.get_rect(center=upgrade_rect.center)
             surface.blit(text, text_rect)
@@ -106,4 +104,3 @@ class Player:
     def apply_upgrade(self, upgrade):
         upgrade["applied"] = True
         upgrade["display_time"] = time.time() + 1  # Display upgrade text for 1 second
-        self.score -= upgrade["price"]

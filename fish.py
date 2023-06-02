@@ -15,6 +15,7 @@ class Fish:
         self.rect = self.image.get_rect()
         self.rect.center = (self.x, self.y)
         self.is_caught = False
+        self.is_scored = False
 
     def update(self, line_rect):
         if not self.is_caught:
